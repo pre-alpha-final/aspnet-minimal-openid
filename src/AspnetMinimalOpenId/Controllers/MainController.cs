@@ -48,6 +48,9 @@ public class MainController : ControllerBase
         {
             Issuer = "https://localhost:7190/",
             JwksUri = "https://localhost:7190/.well-known/openid-configuration/jwks",
+            TokenEndpointAuthMethodsSupported = { "private_key_jwt" },
+            IdTokenSigningAlgValuesSupported = { "RS256" },
+            ScopesSupported = { "openid" }
         });
     }
 
@@ -55,21 +58,26 @@ public class MainController : ControllerBase
     [Route("/.well-known/openid-configuration/jwks")]
     public IActionResult Jwks()
     {
-        var jsonWebKeySet = new JsonWebKeySet();
         var certificate = X509Certificate2.CreateFromPem(_configuration["Certificate"]);
-        var rsaParameters = ((RSA)certificate.PublicKey.Key).ExportParameters(false);
-        var jsonWebKey = new JsonWebKey
-        {
-            Kty = certificate.PublicKey.Key.KeyExchangeAlgorithm,
-            Use = "sig",
-            Kid = certificate.Thumbprint,
-            X5t = certificate.Thumbprint,
-            N = Base64UrlEncoder.Encode(rsaParameters.Modulus),
-            E = Base64UrlEncoder.Encode(rsaParameters.Exponent),
-        };
-        jsonWebKeySet.Keys.Add(jsonWebKey);
+        var rsaParameters = certificate.GetRSAPublicKey()?.ExportParameters(false);
 
-        return Ok(jsonWebKeySet);
+        // https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/2254
+        return Ok(new Dictionary<string, List<Dictionary<string, string>>>
+        {
+            {
+                "keys", [
+                    new()
+                    {
+                        { "kty", certificate.GetRSAPublicKey()?.KeyExchangeAlgorithm },
+                        { "use", "sig" },
+                        { "kid", certificate.Thumbprint },
+                        { "x5t", certificate.Thumbprint },
+                        { "n", Base64UrlEncoder.Encode(rsaParameters?.Modulus ?? []) },
+                        { "e", Base64UrlEncoder.Encode(rsaParameters?.Exponent ?? []) },
+                    }
+                ]
+            }
+        });
     }
 
     [HttpGet]

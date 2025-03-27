@@ -10,6 +10,14 @@ public class Program
 
         builder.Configuration.AddEnvironmentVariables();
 
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.WithOrigins("*");
+            });
+        });
+
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
@@ -38,6 +46,8 @@ public class Program
 
         app.UseSwagger();
         app.UseSwaggerUI();
+
+        app.UseCors();
 
         app.UseHttpsRedirection();
 
