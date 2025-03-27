@@ -64,8 +64,8 @@ public class MainController : ControllerBase
             Use = "sig",
             Kid = certificate.Thumbprint,
             X5t = certificate.Thumbprint,
-            N = Convert.ToBase64String(rsaParameters.Modulus),
-            E = Convert.ToBase64String(rsaParameters.Exponent),
+            N = Base64UrlEncoder.Encode(rsaParameters.Modulus),
+            E = Base64UrlEncoder.Encode(rsaParameters.Exponent),
         };
         jsonWebKeySet.Keys.Add(jsonWebKey);
 
